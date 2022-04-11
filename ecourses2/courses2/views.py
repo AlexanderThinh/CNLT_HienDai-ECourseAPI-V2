@@ -17,6 +17,7 @@ class CategoryViewSet(viewsets.ViewSet, generics.ListAPIView):
     serializer_class = CategorySerializer
 
 class CourseViewSet(viewsets.ViewSet, generics.ListAPIView, generics.RetrieveAPIView):
+    # queryset = Course.objects.all()
     serializer_class = CourseSerializer
     pagination_class = CoursePagination
 
