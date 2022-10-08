@@ -33,6 +33,19 @@ class TagSerializer(ModelSerializer):
 
 
 class LessonSerializer(ModelSerializer):
+    image = SerializerMethodField()
+
+    def get_image(self, lesson):
+        request = self.context['request']
+
+        name = lesson.image.name
+
+        if name.startswith('static/'):
+            path = '/%s' % name
+        else:
+            path = '/static/%s' % name
+        return request.build_absolute_uri(path)
+
     class Meta:
         model = Lesson
         fields = ['id', 'name', 'image', 'created_date', 'updated_date', 'course']
@@ -40,8 +53,8 @@ class LessonSerializer(ModelSerializer):
 
 class LessonDetailSerializer(LessonSerializer):
     tags = TagSerializer(many=True)
-    image = SerializerMethodField()
     rate = SerializerMethodField()
+    image = SerializerMethodField()
 
     def get_image(self, lesson):
         request = self.context['request']
@@ -69,17 +82,17 @@ class LessonDetailSerializer(LessonSerializer):
 
 
 class UserSerializer(ModelSerializer):
-    # avatar = SerializerMethodField()
-    # def get_avatar(self, user):
-    #     request = self.context['request']
-    #
-    #     name = user.avatar.name
-    #
-    #     if name.startswith('static/'):
-    #         path = '/%s' % name
-    #     else:
-    #         path = '/static/%s' % name
-    #     return request.build_absolute_uri(path)
+    avatar = SerializerMethodField()
+    def get_avatar(self, user):
+        request = self.context['request']
+
+        name = user.avatar.name
+
+        if name.startswith('static/'):
+            path = '/%s' % name
+        else:
+            path = '/static/%s' % name
+        return request.build_absolute_uri(path)
 
     class Meta:
         model = User
@@ -117,6 +130,13 @@ class RatingSerializer(ModelSerializer):
     class Meta:
         model = Rating
         fields = ['id', 'rate', 'created_date']
+
+
+class LikeSerializer(ModelSerializer):
+    class Meta:
+        model = Like
+        fields = ['id', 'active', 'creater', 'lesson']
+
 
 class LessonViewSerializer(ModelSerializer):
     class Meta:

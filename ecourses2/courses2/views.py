@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets, generics, status, permissions, serializers
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
@@ -11,6 +12,23 @@ from django.db.models import F
 from .models import *
 from .serializers import *
 from .paginations import *
+
+
+class UserViewSet(viewsets.ViewSet, generics.CreateAPIView):
+    queryset = User.objects.filter(is_active=True)
+    serializer_class = UserSerializer
+    parser_classes = [MultiPartParser, ]
+
+    @action(methods=['get'], detail=False, url_path='current-user')
+    def get_current_user(self, request):
+        return Response(self.serializer_class(request.user, context={'request': request}).data,
+                        status=status.HTTP_200_OK)
+
+    def get_permissions(self):
+        if self.action == 'get_current_user':
+            return [permissions.IsAuthenticated()]
+        return [permissions.AllowAny()]
+
 
 class CategoryViewSet(viewsets.ViewSet, generics.ListAPIView):
     queryset = Category.objects.all()
@@ -34,6 +52,7 @@ class CourseViewSet(viewsets.ViewSet, generics.ListAPIView, generics.RetrieveAPI
 
         return courses
 
+
     @action(methods=['get'], detail=True, url_path='lessons')
     def get_lessons(self, request, pk):
         course = Course.objects.get(pk=pk)
@@ -43,7 +62,7 @@ class CourseViewSet(viewsets.ViewSet, generics.ListAPIView, generics.RetrieveAPI
         if q:
             lessons = lessons.filter(name__icontains=q)
 
-        return Response(data=LessonSerializer(lessons, many=True).data,
+        return Response(data=LessonSerializer(lessons, many=True, context={'request': request}).data,
                         status=status.HTTP_200_OK)
 
 class LessonViewSet(viewsets.ViewSet, generics.RetrieveAPIView):
@@ -88,29 +107,30 @@ class LessonViewSet(viewsets.ViewSet, generics.RetrieveAPIView):
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
+    # @action(methods=['post'], detail=True, url_path='like')
+    # def take_action(self, request, pk):
+    #     try:
+    #         action_type = int(request.data['type'])
+    #     except IndexError | ValueError:
+    #         return Response(status=status.HTTP_400_BAD_REQUEST)
+    #     else:
+    #         action = Action.objects.create(type=action_type, lesson=self.get_object(),
+    #                                        creater=request.user)
+    #
+    #         return Response(data=ActionSerializer(action).data,
+    #                         status=status.HTTP_200_OK)
+
     @action(methods=['post'], detail=True, url_path='like')
-    def take_action(self, request, pk):
-        try:
-            action_type = int(request.data['type'])
-        except IndexError | ValueError:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-        else:
-            action = Action.objects.create(type=action_type, lesson=self.get_object(),
-                                           creater=request.user)
-
-            return Response(data=ActionSerializer(action).data,
-                            status=status.HTTP_200_OK)
-
-    @action(methods=['post'], url_path='like', detail=True)
     def like(self, request, pk):
-        lesson = self.get_object()
+        lesson = Lesson.objects.get(pk=pk)
         user = request.user
 
-        l, _ = Like.objects.get_or_create(lesson=lesson, creater=user)
+        l, created = Like.objects.get_or_create(lesson=lesson, creater=user)
         l.active = not l.active
         l.save()
 
-        return Response(status=status.HTTP_201_CREATED)
+        return Response(data=LikeSerializer(l).data,
+                        status=status.HTTP_201_CREATED)
 
     @action(methods=['post'], detail=True, url_path='rating')
     def rate(self, request, pk):
@@ -148,23 +168,7 @@ class LessonViewSet(viewsets.ViewSet, generics.RetrieveAPIView):
         return Response(data=LessonViewSerializer(v).data, status=status.HTTP_200_OK)
 
     def get_permissions(self):
-        if self.action in ['add_comments', 'take_action', 'rate', 'like']:
-            return [permissions.IsAuthenticated()]
-        return [permissions.AllowAny()]
-
-
-class UserViewSet(viewsets.ViewSet, generics.CreateAPIView):
-    queryset = User.objects.filter(is_active=True)
-    serializer_class = UserSerializer
-    parser_classes = [MultiPartParser, ]
-
-    @action(methods=['get'], detail=False, url_path='current-user')
-    def get_current_user(self, request):
-        return Response(self.serializer_class(request.user).data,
-                        status=status.HTTP_200_OK)
-
-    def get_permissions(self):
-        if self.action == 'get_current_user':
+        if self.action in ['add_comments', 'rate']:
             return [permissions.IsAuthenticated()]
         return [permissions.AllowAny()]
 

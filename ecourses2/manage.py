@@ -21,7 +21,10 @@ def main():
 if __name__ == '__main__':
     main()
 
-    # def SayHello(name):
-    #     print('Hello ' + name)
-    #
-    # SayHello('Thinh')
+# myArr = [1, 5, -4]
+# if myArr[0] == 0:
+#     print('Yes')
+# else:
+#     print('No')
+# for a in myArr:
+#     print(a)

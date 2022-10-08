@@ -4,6 +4,7 @@ from django.db import models
 class User(AbstractUser):
     avatar = models.ImageField(upload_to='uploads/%Y/%m', default=None)
 
+
 class Category(models.Model):
     name = models.CharField(max_length=50, null=False, unique=True)
 
@@ -28,7 +29,7 @@ class Course(ItemBase):
         unique_together = ('name', 'category')
 
     description = models.TextField(null=True, blank=True)
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, related_name='courses')
 
 class Lesson(ItemBase):
     class Meta:
@@ -36,7 +37,7 @@ class Lesson(ItemBase):
 
     content = models.TextField(null=True, blank=True)
     course = models.ForeignKey(Course, related_name='lessons', on_delete=models.CASCADE)
-    tags = models.ManyToManyField('Tag', related_name='tags', blank=True, null=True)
+    tags = models.ManyToManyField('Tag', related_name='lessons', blank=True, null=True)
 
 class Tag(models.Model):
     name = models.CharField(max_length=50)
@@ -90,3 +91,4 @@ class LessonView(models.Model):
     updated_date = models.DateTimeField(auto_now=True)
     views = models.IntegerField(default=0)
     lesson = models.OneToOneField(Lesson, related_name='views', on_delete=models.CASCADE)
+
